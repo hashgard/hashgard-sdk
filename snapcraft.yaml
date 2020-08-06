@@ -1,0 +1,46 @@
+name: hashgard
+version: git
+summary: Hashgard Daemon # 79 char long summary
+description: |
+  This snap provides the Hashgard daemon hashgardd and the command line
+  tool hashgardcli.
+grade: stable
+confinement: strict
+
+apps:
+    hashgardd:
+        command: bin/hashgardd
+        plugs: [home,network,network-bind]
+    hashgardcli:
+        command: bin/hashgardcli
+        plugs: [home,network,network-bind,raw-usb]
+
+parts:
+  hashgard:
+    plugin: dump
+    source: ./
+    override-pull: |
+        rootdir=$(pwd)
+        gitroot=$(git rev-parse --show-toplevel)
+        cd ${gitroot} && git archive \
+            -o ${rootdir}/hashgard-git.tar.gz \
+            --format tar.gz -9 --prefix hashgard-git/ HEAD
+        cd ${rootdir}
+        tar xf hashgard-git.tar.gz ; rm -f hashgard-git.tar.gz
+        mkdir -p go/src/github.com/cosmos bin
+        mv hashgard-git/ go/src/github.com/cosmos/cosmos-sdk/
+
+    build-snaps: [go]
+    override-build: |
+        base=`pwd`
+        export GO111MODULE=on
+        export GOPATH=`pwd`/go
+        export GOBIN=$GOPATH/bin
+        export PATH=$GOBIN:$PATH
+        cd $GOPATH/src/github.com/cosmos/cosmos-sdk
+        make go-mod-cache
+        make tools
+        make install
+        mkdir $SNAPCRAFT_PART_INSTALL/bin
+        cp $GOPATH/bin/hashgardd $SNAPCRAFT_PART_INSTALL/bin
+        cp $GOPATH/bin/hashgardcli $SNAPCRAFT_PART_INSTALL/bin
