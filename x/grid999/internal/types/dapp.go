@@ -12,7 +12,7 @@ type Dapp struct {
 	Name                            string         `json:"name" yaml:"name"`
 	Icon                            string         `json:"icon" yaml:"icon"`
 	Desc                            string         `json:"desc" yaml:"desc"`
-	Voted                           bool           `json:"voted" yaml:"voted"`
+	DappType                        string         `json:"dapp_type" yaml:"dapp_type"`
 	EndHeight                       int64          `json:"end_height" yaml:"end_height"`
 	MaxBlocksGridCreate             int64          `json:"max_blocks_grid_create" yaml:"max_blocks_grid_create"`
 	GridCreateCanDeposit            bool           `json:"grid_create_can_deposit" yaml:"grid_create_can_deposit"`

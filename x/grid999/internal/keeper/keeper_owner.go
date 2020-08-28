@@ -64,7 +64,7 @@ func (k Keeper) WithdrawLucky(ctx sdk.Context, sender sdk.AccAddress, dappId uin
 		}
 		luckyCoin = luckyCoin.Sub(fees)
 	}
-	if err = k.GetBankKeeper().SendCoins(ctx, k.GetLuckyPoolAddr(dappId), k.GetCommunityPoolAddr(), luckyCoin); err != nil {
+	if err = k.GetBankKeeper().SendCoins(ctx, k.GetLuckyPoolAddr(dappId), sender, luckyCoin); err != nil {
 		return sdk.Coins{}, err
 	}
 	return

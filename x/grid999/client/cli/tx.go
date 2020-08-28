@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/cosmos/cosmos-sdk/x/grid999/internal/types"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"strconv"
 )
@@ -42,10 +43,10 @@ func GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 func GetCmdCreateGrid(cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "create [dapp_id] [amount] [zero_valued] [locked]",
+		Use:     "create [dapp_id] [amount] [zero_valued] [grid_type]",
 		Short:   "Create a grid from a dapp",
 		Args:    cobra.ExactArgs(4),
-		Example: fmt.Sprintf(`$ %s tx %s create 100000000ugard false false`, version.ClientName, types.ModuleName),
+		Example: fmt.Sprintf(`$ %s tx %s create 100000000ugard false open`, version.ClientName, types.ModuleName),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
@@ -61,15 +62,12 @@ func GetCmdCreateGrid(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			locked, err := strconv.ParseBool(args[3])
-			if err != nil {
-				return err
-			}
 			msg := types.MsgDappCreateGrid{Sender: cliCtx.GetFromAddress(),
 				DappID:     uint(dappID),
 				Deposit:    amount,
 				ZeroValued: zeroValued,
-				Locked:     locked}
+				GridType:   args[3],
+				Prepaid:    viper.GetString("prepaid")}
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -78,6 +76,7 @@ func GetCmdCreateGrid(cdc *codec.Codec) *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().String("prepaid", "", "address:height:coins,address:height:coins")
 	return cmd
 }
 func GetCmdDepositGrid(cdc *codec.Codec) *cobra.Command {
@@ -287,7 +286,7 @@ json file：
 	"max_blocks_grid_create": 9,
 	"max_blocks_grid_deposit": 9,
 	"grid_create_can_deposit": true,
-	"voted": false,
+	"dapp_type": "",
 	"only_owner_can_create_grid": false,
 	"rand_number_negative_critical_value": 50,
 	"per_grid_max_deposits": 9,

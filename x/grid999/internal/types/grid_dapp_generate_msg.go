@@ -29,13 +29,13 @@ func (msg MsgDappGenerate) ValidateBasic() sdk.Error {
 	if msg.Dapp.MemberMinDeposit.IsZero() {
 		return sdk.ErrInsufficientCoins("member min deposit cannot be 0")
 	}
-	if msg.Dapp.FeeRatio.LT(sdk.ZeroDec()) {
+	if msg.Dapp.FeeRatio.IsNil() || msg.Dapp.FeeRatio.LT(sdk.ZeroDec()) {
 		return sdk.ErrInsufficientCoins("fee ratio is invalid")
 	}
-	if msg.Dapp.OwnerRewardsRatio.LT(sdk.ZeroDec()) {
+	if msg.Dapp.OwnerRewardsRatio.IsNil() || msg.Dapp.OwnerRewardsRatio.LT(sdk.ZeroDec()) {
 		return sdk.ErrInsufficientCoins("owner rewards ratio is invalid")
 	}
-	if msg.Dapp.LuckyPoolRatio.LT(sdk.ZeroDec()) {
+	if msg.Dapp.LuckyPoolRatio.IsNil() || msg.Dapp.LuckyPoolRatio.LT(sdk.ZeroDec()) {
 		return sdk.ErrInsufficientCoins("lucky pool ratio is invalid")
 	}
 	if msg.Dapp.LuckyPoolRewardsDigit > 10 || msg.Dapp.DepositToLuckyPoolDigit > 10 {
@@ -55,6 +55,9 @@ func (msg MsgDappGenerate) ValidateBasic() sdk.Error {
 	}
 	if len(msg.Dapp.Name) > 20 {
 		return sdk.ErrInternal("name max length is 20")
+	}
+	if len(msg.Dapp.DappType) > 20 {
+		return sdk.ErrInternal("dapp type max length is 20")
 	}
 	if len(msg.Dapp.Icon) > 100 {
 		return sdk.ErrInternal("icon max length is 100")

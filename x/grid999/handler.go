@@ -56,8 +56,9 @@ func handleMsgDappCreateGrid(ctx sdk.Context, k Keeper, msg types.MsgDappCreateG
 	gridItem := &types.GridItem{
 		Owner:        msg.Sender,
 		OwnerDeposit: msg.Deposit,
-		Locked:       msg.Locked,
+		GridType:     msg.GridType,
 		ZeroValued:   msg.ZeroValued,
+		Prepaid:      msg.Prepaid,
 	}
 	_, id, err := k.CreateGrid(ctx, msg.DappID, gridItem)
 	if err != nil {
@@ -149,7 +150,7 @@ func handleMsgDappWithdrawLucky(ctx sdk.Context, k Keeper, msg types.MsgDappWith
 			sdk.EventTypeMessage,
 			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
 			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
-			sdk.NewAttribute(types.AttributeAddress, k.GetCommunityPoolAddr().String()),
+			sdk.NewAttribute(types.AttributeAddress, msg.Sender.String()),
 			sdk.NewAttribute(types.AttributeWithdrawFee, fees.String()),
 		),
 	})

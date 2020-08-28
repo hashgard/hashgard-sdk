@@ -15,8 +15,9 @@ type GridItem struct {
 	OwnerNumber   int64          `json:"owner_number" yaml:"owner_number"`
 	TotalNumber   int64          `json:"total_number" yaml:"total_number"`
 	Deposits      []string       `json:"deposits" yaml:"deposits"`
-	Locked        bool           `json:"locked" yaml:"locked"`
+	GridType      string         `json:"grid_type" yaml:"grid_type"`
 	ZeroValued    bool           `json:"zero_valued" yaml:"zero_valued"`
+	Prepaid       string         `json:"prepaid" yaml:"prepaid"`
 }
 
 type Grid struct {
@@ -30,6 +31,7 @@ type Grid struct {
 	Rewards      []string   `json:"rewards" yaml:"rewards"`
 	Deposits     []string   `json:"deposits" yaml:"deposits"`
 	Backs        []string   `json:"backs" yaml:"backs"`
+	Prepaid      []string   `json:"prepaid" yaml:"prepaid"`
 }
 type Grids []Grid
 

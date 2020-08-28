@@ -3,14 +3,14 @@ package keeper
 import (
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/grid999/internal/types"
 	"github.com/tendermint/tendermint/crypto"
+	"strconv"
 	"strings"
 )
 
-func (k Keeper) GetCommunityPoolAddr() sdk.AccAddress {
-	return sdk.AccAddress(crypto.AddressHash([]byte(fmt.Sprintf(distribution.ModuleName))))
+func (k Keeper) GetPrepaidAddr(dappID uint) sdk.AccAddress {
+	return sdk.AccAddress(crypto.AddressHash([]byte(fmt.Sprintf("gridPrepaidAddr_%d", dappID))))
 }
 func (k Keeper) GetDepositAddr(dappID uint) sdk.AccAddress {
 	return sdk.AccAddress(crypto.AddressHash([]byte(fmt.Sprintf("gridDepositAddr_%d", dappID))))
@@ -20,6 +20,63 @@ func (k Keeper) GetLuckyPoolAddr(dappID uint) sdk.AccAddress {
 }
 func (k Keeper) GetFeeAddr(dappID uint) sdk.AccAddress {
 	return sdk.AccAddress(crypto.AddressHash([]byte(fmt.Sprintf("gridFeeAddr%d_", dappID))))
+}
+func (k Keeper) Prepaid(ctx sdk.Context, dappID uint, gridItem *types.GridItem) (err sdk.Error) {
+	if len(gridItem.Prepaid) == 0 {
+		return sdk.ErrInternal("prepaid is empty")
+	}
+	values := strings.Split(gridItem.Prepaid, ",")
+	var totalCoins = sdk.Coins{}
+	for _, v := range values {
+		prepaid := strings.Split(v, ":")
+		if len(prepaid) != 3 {
+			return sdk.ErrInvalidAddress("Prepaid is invalid,The format is like this 'address:height:coins,address:height:coins'")
+		}
+		coins, err := sdk.ParseCoins(prepaid[2])
+		if err != nil {
+			return sdk.ErrInvalidAddress("Prepaid is invalid,The format is like this 'address:height:coins,address:height:coins'")
+		}
+		if totalCoins.IsZero() {
+			totalCoins = coins
+		} else {
+			totalCoins = totalCoins.Add(coins)
+		}
+	}
+	if totalCoins.IsZero() {
+		return
+	}
+	if err = k.bankKeeper.SendCoins(ctx, gridItem.Owner, k.GetPrepaidAddr(dappID), totalCoins); err != nil {
+		return
+	}
+	return
+}
+func (k Keeper) WithdrawPrepaid(ctx sdk.Context, dappID uint, sender sdk.AccAddress, grid *types.Grid) (err sdk.Error) {
+	values := strings.Split(grid.Items[0].Prepaid, ",")
+	for _, v := range values {
+		prepaid := strings.Split(v, ":")
+		if sender.String() != prepaid[0] {
+			continue
+		}
+		height, _ := strconv.ParseInt(prepaid[1], 10, 64)
+		flag := true
+		if height <= ctx.BlockHeight() {
+			for _, vp := range grid.Prepaid {
+				if vp == v {
+					flag = false
+					break
+				}
+			}
+			if flag {
+				coins, _ := sdk.ParseCoins(prepaid[2])
+				if err = k.bankKeeper.SendCoins(ctx, k.GetPrepaidAddr(dappID), sender, coins); err != nil {
+					return
+				}
+				grid.Prepaid = append(grid.Prepaid, v)
+			}
+		}
+	}
+	k.SetGrid(ctx, grid)
+	return
 }
 func (k Keeper) CreateGrid(ctx sdk.Context, dappID uint, gridItem *types.GridItem) (grid *types.Grid, id uint64, err sdk.Error) {
 	dapp := k.GetDapp(ctx, dappID)
@@ -42,6 +99,7 @@ func (k Keeper) CreateGrid(ctx sdk.Context, dappID uint, gridItem *types.GridIte
 			return grid, id, err
 		}
 	}
+
 	store := ctx.KVStore(k.storeKey)
 	id = k.getLastGridID(store, dappID)
 
@@ -56,6 +114,16 @@ func (k Keeper) CreateGrid(ctx sdk.Context, dappID uint, gridItem *types.GridIte
 		grid = types.DefaultGrid(ctx.BlockHeight(), dappID)
 		k.setNewGridID(store, dappID, id)
 	}
+	if types.TypePrepaid == dapp.DappType {
+		if err := k.Prepaid(ctx, dappID, gridItem); err != nil {
+			return grid, id, err
+		}
+		grid.Items = []types.GridItem{*gridItem}
+		grid.ID = id
+		k.SetGrid(ctx, grid)
+		return
+	}
+
 	if err = k.checkMaxDepositAmount(dapp.MaxDepositAmount, grid.TotalDeposit, gridItem.OwnerDeposit); err != nil {
 		return
 	}
@@ -144,13 +212,13 @@ func (k Keeper) DepositGrid(ctx sdk.Context, dappID, indexSeq uint, id uint64, s
 	if len(grid.Items[index].Deposits) >= dapp.PerGridMaxDeposits {
 		return sdk.Coin{}, sdk.Coin{}, sdk.ErrInternal("can not deposit to the grid any more,max deposits is " + fmt.Sprintf("%d", dapp.PerGridMaxDeposits))
 	}
-	if grid.Items[index].Locked {
+	if types.TypeLock == grid.Items[index].GridType {
 		return sdk.Coin{}, sdk.Coin{}, sdk.ErrInternal("can not deposit to the locked grid")
 	}
 
 	feeCoin = sdk.NewCoin(deposit.Denom, sdk.ZeroInt())
 	params := k.GetParam(ctx)
-	if !dapp.Voted && !params.DepositFee.IsZero() {
+	if types.TypeVote != dapp.DappType && !params.DepositFee.IsZero() {
 		feeCoin = params.DepositFee
 		if err = k.SendGrid999FeeCoins(ctx, sender, sdk.NewCoins(feeCoin)); err != nil {
 			return sdk.Coin{}, sdk.Coin{}, err
@@ -216,6 +284,14 @@ func (k Keeper) WithdrawGrid(ctx sdk.Context, dappID uint, id uint64, sender sdk
 	if dapp == nil {
 		return sdk.Coins{}, sdk.Coins{}, sdk.Coins{}, sdk.Coins{}, sdk.ErrInternal("dapp is not found")
 	}
+
+	if types.TypePrepaid == dapp.DappType {
+		if err := k.WithdrawPrepaid(ctx, dappID, sender, grid); err != nil {
+			return sdk.Coins{}, sdk.Coins{}, sdk.Coins{}, sdk.Coins{}, err
+		}
+		return sdk.Coins{}, sdk.Coins{}, sdk.Coins{}, sdk.Coins{}, nil
+	}
+
 	rewardsCanWithdraw := false
 	depositCanWithdraw := false
 
@@ -231,7 +307,7 @@ func (k Keeper) WithdrawGrid(ctx sdk.Context, dappID uint, id uint64, sender sdk
 	}
 	ranks := dapp.Ranks.GetRank(len(grid.Items))
 
-	if dapp.Voted || len(ranks) == 0 || (!dapp.MinDepositAmount.IsZero() && dapp.MinDepositAmount.IsAnyGT(grid.TotalDeposit)) {
+	if types.TypeVote == dapp.DappType || len(ranks) == 0 || (!dapp.MinDepositAmount.IsZero() && dapp.MinDepositAmount.IsAnyGT(grid.TotalDeposit)) {
 		withdrawDeposit, err = k.backDeposit(ctx, grid, dapp, sender)
 		if err != nil {
 			return sdk.Coins{}, sdk.Coins{}, sdk.Coins{}, sdk.Coins{}, err

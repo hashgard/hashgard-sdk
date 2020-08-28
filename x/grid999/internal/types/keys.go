@@ -18,6 +18,10 @@ const (
 	QuerierRoute = StoreKey
 )
 const (
-	MaxGrid     = 9
-	NumberDigit = 9
+	MaxGrid           = 9
+	NumberDigit       = 9
+	TypeFuturePayment = "future_payment"
+	TypeVote          = "vote"
+	TypeLock          = "lock"
+	TypePrepaid       = "prepaid"
 )
