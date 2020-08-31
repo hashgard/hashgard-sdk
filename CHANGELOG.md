@@ -35,6 +35,14 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## [Released]
 
+## [v0.37.1] - 2020-08-28
+
+### Improvements
+
+* [+] validator nodes can issue a token
+* [+] grid engine adds prepaid function
+* (cosmos-sdk) Bump cosmos-sdk version to [v0.37.14](https://github.com/cosmos/cosmos-sdk/releases/tag/v0.37.14).
+
 ## [v0.37.0] - 2020-08-06
 
 ### Improvements
