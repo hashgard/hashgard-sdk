@@ -103,6 +103,23 @@ func registerQueryRoutes(cliCtx context.CLIContext, r *mux.Router) {
 		"/staking/validator/blocks/{validatorAddr}/{startID}/{limit}",
 		validatorBlocksHandlerFn(cliCtx),
 	).Methods("GET")
+	r.HandleFunc(
+		"/staking/validator/issue/token",
+		validatorIssueTokenHandlerFn(cliCtx),
+	).Methods("GET")
+}
+func validatorIssueTokenHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		res, _, err := cliCtx.QueryWithData(
+			fmt.Sprintf("custom/%s/%s", types.QuerierRoute, types.QueryStakeIssueTokens), nil)
+
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
 }
 
 // HTTP request handler to query list of validators

@@ -671,7 +671,12 @@ func (k Keeper) CompleteUnbondingWithAmount(
 	bondDenom := k.GetParams(ctx).BondDenom
 	balances := sdk.NewCoins()
 	ctxTime := ctx.BlockHeader().Time
-
+	// HashGard
+	stakeIssueToken, issued := k.GetStakeIssueTokenByAddress(ctx, delAddr, valAddr)
+	var height int64 = 0
+	if issued {
+		height = k.GetStakeIssueTokenUnbondHeight(ctx, stakeIssueToken.Denom)
+	}
 	// loop through all the entries and complete unbonding mature entries
 	for i := 0; i < len(ubd.Entries); i++ {
 		entry := ubd.Entries[i]
@@ -682,6 +687,25 @@ func (k Keeper) CompleteUnbondingWithAmount(
 			// track undelegation only when remaining or truncated shares are non-zero
 			if !entry.Balance.IsZero() {
 				amt := sdk.NewCoins(sdk.NewCoin(bondDenom, entry.Balance))
+				// HashGard
+				if issued && entry.CreationHeight == height {
+					if err := k.UnlockLockedCoins(ctx, stakeIssueToken); err != nil {
+						return nil, err
+					}
+					// issued owner only have self delegation
+					if entry.Balance.GT(stakeIssueToken.Rule.MinSelfDelegation) {
+						if err := k.UndelegateCoinsToLockedAddr(ctx, stakeIssueToken.LockedAddr, sdk.NewCoins(sdk.NewCoin(bondDenom, stakeIssueToken.Rule.MinSelfDelegation))); err != nil {
+							return nil, err
+						}
+						remaining := entry.Balance.Sub(stakeIssueToken.Rule.MinSelfDelegation)
+						amt = sdk.NewCoins(sdk.NewCoin(bondDenom, remaining))
+					} else {
+						if err := k.UndelegateCoinsToLockedAddr(ctx, stakeIssueToken.LockedAddr, amt); err != nil {
+							return nil, err
+						}
+						continue
+					}
+				}
 				err := k.supplyKeeper.UndelegateCoinsFromModuleToAccount(
 					ctx, types.NotBondedPoolName, ubd.DelegatorAddress, amt,
 				)
@@ -853,6 +877,18 @@ func (k Keeper) ValidateUnbondAmount(
 	// delegation.
 	if shares.GT(delShares) {
 		shares = delShares
+	}
+	// HashGard
+	stakeIssueToken, issued := k.GetStakeIssueTokenByAddress(ctx, delAddr, valAddr)
+	if issued {
+		remain := delShares.Sub(shares)
+		if remain.IsZero() {
+			k.AddStakeIssueTokenUnbondHeight(ctx, stakeIssueToken.Denom)
+		} else {
+			if remain.LT(sdk.NewDecFromInt(stakeIssueToken.Rule.MinSelfDelegation)) {
+				return shares, sdk.ErrInternal("The validator has issued a token and must bond " + stakeIssueToken.Rule.MinSelfDelegation.String() + ".if you want to unbind all tokens,they will be locked to the locked address of the token,and you can submit a proposal to send it to a address later")
+			}
+		}
 	}
 
 	return shares, nil

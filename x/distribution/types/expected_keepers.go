@@ -43,6 +43,10 @@ type StakingKeeper interface {
 	GetLastValidatorPower(ctx sdk.Context, valAddr sdk.ValAddress) int64
 
 	GetAllSDKDelegations(ctx sdk.Context) []staking.Delegation
+
+	// HashGard
+	GetStakeIssueTokenPerBlockMint(ctx sdk.Context, consAddr sdk.ConsAddress) (proposerNodeAmount, voterNodeAmount sdk.Coin, mint bool)
+	StakeIssueLockedSpend(ctx sdk.Context, denom string, Recipient sdk.AccAddress, amount sdk.Coins) (err sdk.Error)
 }
 
 // StakingHooks event hooks for staking validator object (noalias)
@@ -67,4 +71,7 @@ type SupplyKeeper interface {
 	SendCoinsFromModuleToModule(ctx sdk.Context, senderModule string, recipientModule string, amt sdk.Coins) sdk.Error
 	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) sdk.Error
 	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) sdk.Error
+
+	// HashGard
+	MintCoins(ctx sdk.Context, name string, amt sdk.Coins) sdk.Error
 }

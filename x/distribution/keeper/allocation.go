@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -40,6 +39,21 @@ func (k Keeper) AllocateTokens(
 		return
 	}
 
+	// HashGard
+	proposerNodeAmount, voterNodeAmount, nodeMint := k.stakingKeeper.GetStakeIssueTokenPerBlockMint(ctx, previousProposer)
+	proposerNodeMint := sdk.DecCoins{}
+	voterNodeMint := sdk.DecCoins{}
+	voterNodeMintRemaining := voterNodeMint
+	// HashGard
+	if nodeMint {
+		proposerCoin := sdk.NewCoins(proposerNodeAmount)
+		voterCoin := sdk.NewCoins(voterNodeAmount)
+
+		proposerNodeMint = sdk.NewDecCoins(proposerCoin)
+		voterNodeMint = sdk.NewDecCoins(voterCoin)
+		voterNodeMintRemaining = voterNodeMint
+	}
+
 	// calculate fraction votes
 	previousFractionVotes := sdk.NewDec(sumPreviousPrecommitPower).Quo(sdk.NewDec(totalPreviousPower))
 
@@ -61,8 +75,8 @@ func (k Keeper) AllocateTokens(
 				sdk.NewAttribute(types.AttributeKeyValidator, proposerValidator.GetOperator().String()),
 			),
 		)
-
-		k.AllocateTokensToValidator(ctx, proposerValidator, proposerReward)
+		// HashGard
+		k.AllocateTokensToValidator(ctx, proposerValidator, proposerReward, proposerNodeMint, nodeMint)
 		remaining = remaining.Sub(proposerReward)
 	} else {
 		// previous proposer can be unknown if say, the unbonding period is 1 block, so
@@ -83,14 +97,26 @@ func (k Keeper) AllocateTokens(
 
 	// allocate tokens proportionally to voting power
 	// TODO consider parallelizing later, ref https://github.com/cosmos/cosmos-sdk/pull/3099#discussion_r246276376
-	for _, vote := range previousVotes {
+	for i, vote := range previousVotes {
 		validator := k.stakingKeeper.ValidatorByConsAddr(ctx, vote.Validator.Address)
 
 		// TODO consider microslashing for missing votes.
 		// ref https://github.com/cosmos/cosmos-sdk/issues/2525#issuecomment-430838701
 		powerFraction := sdk.NewDec(vote.Validator.Power).QuoTruncate(sdk.NewDec(totalPreviousPower))
 		reward := feesCollected.MulDecTruncate(voteMultiplier).MulDecTruncate(powerFraction)
-		k.AllocateTokensToValidator(ctx, validator, reward)
+		// HashGard
+		if nodeMint {
+			mintToken := sdk.DecCoins{}
+			if i != len(previousVotes)-1 {
+				mintToken = voterNodeMint.MulDecTruncate(powerFraction)
+				voterNodeMintRemaining = voterNodeMintRemaining.Sub(mintToken)
+			} else {
+				mintToken = voterNodeMintRemaining
+			}
+			k.AllocateTokensToValidator(ctx, validator, reward, mintToken, true)
+		} else {
+			k.AllocateTokensToValidator(ctx, validator, reward, voterNodeMint, false)
+		}
 		remaining = remaining.Sub(reward)
 	}
 
@@ -99,8 +125,9 @@ func (k Keeper) AllocateTokens(
 	k.SetFeePool(ctx, feePool)
 }
 
+// HashGard
 // AllocateTokensToValidator allocate tokens to a particular validator, splitting according to commission
-func (k Keeper) AllocateTokensToValidator(ctx sdk.Context, val exported.ValidatorI, tokens sdk.DecCoins) {
+func (k Keeper) AllocateTokensToValidator(ctx sdk.Context, val exported.ValidatorI, tokens, nodeMintToken sdk.DecCoins, nodeMint bool) {
 	// split tokens between validator and delegators according to commission
 	commission := tokens.MulDec(val.GetCommission())
 	shared := tokens.Sub(commission)
@@ -119,6 +146,11 @@ func (k Keeper) AllocateTokensToValidator(ctx sdk.Context, val exported.Validato
 
 	// update current rewards
 	currentRewards := k.GetValidatorCurrentRewards(ctx, val.GetOperator())
+	// HashGard
+	if nodeMint {
+		shared = shared.Add(nodeMintToken)
+		tokens = tokens.Add(nodeMintToken)
+	}
 	currentRewards.Rewards = currentRewards.Rewards.Add(shared)
 	k.SetValidatorCurrentRewards(ctx, val.GetOperator(), currentRewards)
 

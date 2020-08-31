@@ -19,3 +19,11 @@ const (
 	AttributeKeyCompletionTime    = "completion_time"
 	AttributeValueCategory        = ModuleName
 )
+
+// HashGard
+const (
+	EventTypeStakeIssueToken       = "stake_issue_token"
+	EventTypeStakeIssueTokenEdit   = "stake_issue_token_edit"
+	EventTypeStakeIssueTokenConfig = "stake_issue_token_config"
+	AttributeKeySymbol             = "symbol"
+)

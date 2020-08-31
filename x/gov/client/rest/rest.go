@@ -3,7 +3,6 @@ package rest
 import (
 	"errors"
 	"fmt"
-	client2 "github.com/cosmos/cosmos-sdk/x/staking/client"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -96,11 +95,6 @@ func postProposalHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 
 		req.BaseReq = req.BaseReq.Sanitize()
 		if !req.BaseReq.ValidateBasic(w) {
-			return
-		}
-		// HashGard
-		if err := client2.QueryBondedRatioByClient(cliCtx); err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 		proposalType := gcutils.NormalizeProposalType(req.ProposalType)

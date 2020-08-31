@@ -33,6 +33,8 @@ type SupplyKeeper interface {
 	DelegateCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) sdk.Error
 
 	BurnCoins(ctx sdk.Context, name string, amt sdk.Coins) sdk.Error
+	// HashGard
+	MintCoins(ctx sdk.Context, name string, amt sdk.Coins) sdk.Error
 }
 
 // ValidatorSet expected properties for the set of all validators (noalias)
@@ -98,4 +100,14 @@ type StakingHooks interface {
 	BeforeDelegationRemoved(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress)        // Must be called when a delegation is removed
 	AfterDelegationModified(ctx sdk.Context, delAddr sdk.AccAddress, valAddr sdk.ValAddress)
 	BeforeValidatorSlashed(ctx sdk.Context, valAddr sdk.ValAddress, fraction sdk.Dec)
+}
+
+// HashGard
+type BankKeeper interface {
+	SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) sdk.Error
+	AddCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) (sdk.Coins, sdk.Error)
+	SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) (sdk.Coins, sdk.Error)
+}
+type SceneKeeper interface {
+	AddSenderTxScene(ctx sdk.Context, sender sdk.AccAddress) (err sdk.Error)
 }

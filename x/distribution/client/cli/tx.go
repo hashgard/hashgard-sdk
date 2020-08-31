@@ -258,3 +258,60 @@ Where proposal.json contains:
 
 	return cmd
 }
+
+// GetCmdStakeIssueLockedSpendSubmitProposal implements the command to submit a stake-issue-locked-spend proposal
+func GetCmdStakeIssueLockedSpendSubmitProposal(cdc *codec.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "stake-issue-locked-spend [proposal-file]",
+		Args:  cobra.ExactArgs(1),
+		Short: "Submit a stake issued locked spend proposal",
+		Example: strings.TrimSpace(
+			fmt.Sprintf(`$ %s tx gov submit-proposal stake-issued-locked-spend <path/to/proposal.json> --from=<key_or_address>
+Where proposal.json contains:
+{
+  "title": "Stake Issued Locked Spend",
+  "description": "Fetch back my locked coins!",
+  "recipient": "gard1satlkhlrj7tjrz842m7weazr86gzem2te3mh8w",
+  "denom": "uexp",
+  "amount": [
+    {
+      "denom": "ugard",
+      "amount": "10000"
+    },{
+        "denom": "uggt",
+        "amount": "10"
+      }
+  ],
+  "deposit": [
+    {
+      "denom": "ugard",
+      "amount": "10000"
+    }
+  ]
+}
+`,
+				version.ClientName,
+			),
+		),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			proposal, err := ParseStakeIssueLockedSpendJSON(cdc, args[0])
+			if err != nil {
+				return err
+			}
+
+			from := cliCtx.GetFromAddress()
+			content := types.NewStakeIssueLockedSpendProposal(proposal.Title, proposal.Description, proposal.Denom, proposal.Recipient, proposal.Amount)
+
+			msg := gov.NewMsgSubmitProposal(content, proposal.Deposit, from)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+
+	return cmd
+}

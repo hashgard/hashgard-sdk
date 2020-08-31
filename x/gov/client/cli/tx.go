@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	client2 "github.com/cosmos/cosmos-sdk/x/staking/client"
 	"strconv"
 	"strings"
 
@@ -118,11 +117,6 @@ $ %s tx gov submit-proposal --title="Test Proposal" --description="My awesome pr
 			if err != nil {
 				return err
 			}
-			// HashGard
-			if err = client2.QueryBondedRatioByClient(cliCtx); err != nil {
-				return sdk.ErrInternal(err.Error())
-			}
-
 			content := types.ContentFromProposalType(proposal.Title, proposal.Description, proposal.Type)
 
 			msg := types.NewMsgSubmitProposal(content, amount, cliCtx.GetFromAddress())

@@ -53,7 +53,7 @@ func tally(ctx sdk.Context, keeper Keeper, proposal Proposal) (passes bool, burn
 	// HashGard
 	superVoter := false
 	tallyParams := keeper.GetTallyParams(ctx)
-	if tallyParams.SuperVoter == nil {
+	if tallyParams.SuperVoter == nil || "StakeIssueLockedSpend" == proposal.ProposalType() {
 		superVoter = true
 	}
 	keeper.IterateVotes(ctx, proposal.ProposalID, func(vote types.Vote) bool {

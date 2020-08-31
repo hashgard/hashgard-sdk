@@ -88,7 +88,8 @@ func NewCommunityPoolSpendProposalHandler(k Keeper) govtypes.Handler {
 		switch c := content.(type) {
 		case types.CommunityPoolSpendProposal:
 			return keeper.HandleCommunityPoolSpendProposal(ctx, k, c)
-
+		case types.StakeIssueLockedSpendProposal:
+			return keeper.HandleStakeIssueLockedSpendProposal(ctx, k, c)
 		default:
 			errMsg := fmt.Sprintf("unrecognized distr proposal content type: %T", c)
 			return sdk.ErrUnknownRequest(errMsg)

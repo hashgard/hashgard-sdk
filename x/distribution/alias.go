@@ -130,6 +130,8 @@ var (
 	AttributeKeyValidator                = types.AttributeKeyValidator
 	AttributeValueCategory               = types.AttributeValueCategory
 	ProposalHandler                      = client.ProposalHandler
+	//HashGard
+	StakeIssueLockedProposalHandler = client.StakeIssueLockedProposalHandler
 )
 
 type (

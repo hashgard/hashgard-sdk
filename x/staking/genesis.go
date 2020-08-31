@@ -86,6 +86,10 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, accountKeeper types.AccountKeep
 			keeper.InsertRedelegationQueue(ctx, red, entry.CompletionTime)
 		}
 	}
+	// HashGard
+	for _, item := range data.StakeIssueTokens {
+		keeper.SetStakeIssueToken(ctx, item)
+	}
 
 	bondedCoins := sdk.NewCoins(sdk.NewCoin(data.Params.BondDenom, bondedTokens))
 	notBondedCoins := sdk.NewCoins(sdk.NewCoin(data.Params.BondDenom, notBondedTokens))
@@ -169,6 +173,8 @@ func ExportGenesis(ctx sdk.Context, keeper Keeper) types.GenesisState {
 		UnbondingDelegations: unbondingDelegations,
 		Redelegations:        redelegations,
 		Exported:             true,
+		// HashGard
+		StakeIssueTokens: keeper.GetStakeIssueTokens(ctx),
 	}
 }
 

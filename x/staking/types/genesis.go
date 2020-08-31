@@ -14,6 +14,8 @@ type GenesisState struct {
 	UnbondingDelegations []UnbondingDelegation `json:"unbonding_delegations" yaml:"unbonding_delegations"`
 	Redelegations        []Redelegation        `json:"redelegations" yaml:"redelegations"`
 	Exported             bool                  `json:"exported" yaml:"exported"`
+	// HashGard
+	StakeIssueTokens []StakeIssueToken `json:"stake_issue_tokens" yaml:"stake_issue_tokens"`
 }
 
 // Last validator power, needed for validator set update logic

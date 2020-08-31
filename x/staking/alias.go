@@ -58,13 +58,16 @@ const (
 
 var (
 	// functions aliases
-	RegisterInvariants                 = keeper.RegisterInvariants
-	AllInvariants                      = keeper.AllInvariants
-	ModuleAccountInvariants            = keeper.ModuleAccountInvariants
-	NonNegativePowerInvariant          = keeper.NonNegativePowerInvariant
-	PositiveDelegationInvariant        = keeper.PositiveDelegationInvariant
-	DelegatorSharesInvariant           = keeper.DelegatorSharesInvariant
-	NewKeeper                          = keeper.NewKeeper
+	RegisterInvariants          = keeper.RegisterInvariants
+	AllInvariants               = keeper.AllInvariants
+	ModuleAccountInvariants     = keeper.ModuleAccountInvariants
+	NonNegativePowerInvariant   = keeper.NonNegativePowerInvariant
+	PositiveDelegationInvariant = keeper.PositiveDelegationInvariant
+	DelegatorSharesInvariant    = keeper.DelegatorSharesInvariant
+	NewKeeper                   = keeper.NewKeeper
+	// HashGard
+	NewKeeperBank                      = keeper.NewKeeperBank
+	StakeIssueTokenStartBlock          = types.StakeIssueTokenStartBlock
 	ParamKeyTable                      = keeper.ParamKeyTable
 	NewQuerier                         = keeper.NewQuerier
 	RegisterCodec                      = types.RegisterCodec

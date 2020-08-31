@@ -22,10 +22,13 @@ var _ types.DelegationSet = Keeper{}
 
 // keeper of the staking store
 type Keeper struct {
-	storeKey           sdk.StoreKey
-	storeTKey          sdk.StoreKey
-	cdc                *codec.Codec
-	supplyKeeper       types.SupplyKeeper
+	storeKey     sdk.StoreKey
+	storeTKey    sdk.StoreKey
+	cdc          *codec.Codec
+	supplyKeeper types.SupplyKeeper
+	// HashGard
+	bankKeeper         types.BankKeeper
+	sceneKeeper        types.SceneKeeper
 	hooks              types.StakingHooks
 	paramstore         params.Subspace
 	validatorCache     map[string]cachedValidator
@@ -33,6 +36,34 @@ type Keeper struct {
 
 	// codespace
 	codespace sdk.CodespaceType
+}
+
+// NewKeeperBank creates a new staking Keeper instance
+func NewKeeperBank(cdc *codec.Codec, key, tKey sdk.StoreKey, supplyKeeper types.SupplyKeeper, bankKeeper types.BankKeeper, sceneKeeper types.SceneKeeper,
+	paramstore params.Subspace, codespace sdk.CodespaceType) Keeper {
+
+	// ensure bonded and not bonded module accounts are set
+	if addr := supplyKeeper.GetModuleAddress(types.BondedPoolName); addr == nil {
+		panic(fmt.Sprintf("%s module account has not been set", types.BondedPoolName))
+	}
+
+	if addr := supplyKeeper.GetModuleAddress(types.NotBondedPoolName); addr == nil {
+		panic(fmt.Sprintf("%s module account has not been set", types.NotBondedPoolName))
+	}
+
+	return Keeper{
+		storeKey:           key,
+		storeTKey:          tKey,
+		cdc:                cdc,
+		supplyKeeper:       supplyKeeper,
+		bankKeeper:         bankKeeper,
+		sceneKeeper:        sceneKeeper,
+		paramstore:         paramstore.WithKeyTable(ParamKeyTable()),
+		hooks:              nil,
+		validatorCache:     make(map[string]cachedValidator, aminoCacheSize),
+		validatorCacheList: list.New(),
+		codespace:          codespace,
+	}
 }
 
 // NewKeeper creates a new staking Keeper instance

@@ -57,3 +57,35 @@ func postProposalHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
 		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
 	}
 }
+
+// HashGard
+// ProposalStakeIssueLockedRESTHandler returns a ProposalRESTHandler that exposes the stake issue locked spend REST handler with a given sub-route.
+func ProposalStakeIssueLockedRESTHandler(cliCtx context.CLIContext) govrest.ProposalRESTHandler {
+	return govrest.ProposalRESTHandler{
+		SubRoute: "stake_issue_locked_spend",
+		Handler:  postProposalStakeIssueLockedHandlerFn(cliCtx),
+	}
+}
+
+func postProposalStakeIssueLockedHandlerFn(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req StakeIssueLockedSpendProposalReq
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			return
+		}
+
+		req.BaseReq = req.BaseReq.Sanitize()
+		if !req.BaseReq.ValidateBasic(w) {
+			return
+		}
+		content := types.NewStakeIssueLockedSpendProposal(req.Title, req.Description, req.Denom, req.Recipient, req.Amount)
+
+		msg := gov.NewMsgSubmitProposal(content, req.Deposit, req.Proposer)
+		if err := msg.ValidateBasic(); err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, req.BaseReq, []sdk.Msg{msg})
+	}
+}

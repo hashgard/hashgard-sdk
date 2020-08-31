@@ -49,6 +49,10 @@ func NewQuerier(k Keeper) sdk.Querier {
 			// HashGard
 		case types.QueryBondedRatio:
 			return queryBondedRatio(ctx, k)
+		case types.QueryStakeIssueTokenConfig:
+			return queryStakeIssueTokenConfig(ctx, k)
+		case types.QueryStakeIssueTokens:
+			return queryStakeIssueTokens(ctx, k)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown staking query endpoint")
 		}
@@ -58,6 +62,22 @@ func NewQuerier(k Keeper) sdk.Querier {
 // HashGard
 func queryBondedRatio(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
 	return nil, k.CheckBondedRatio(ctx)
+}
+func queryStakeIssueTokenConfig(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
+	config := k.GetStakeIssueTokenConfig(ctx)
+	res, err := codec.MarshalJSONIndent(types.ModuleCdc, config)
+	if err != nil {
+		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("failed to JSON marshal result: %s", err.Error()))
+	}
+	return res, nil
+}
+func queryStakeIssueTokens(ctx sdk.Context, k Keeper) ([]byte, sdk.Error) {
+	list := k.GetStakeIssueTokens(ctx)
+	res, err := codec.MarshalJSONIndent(types.ModuleCdc, list)
+	if err != nil {
+		return nil, sdk.ErrInternal(sdk.AppendMsgToErr("failed to JSON marshal result: %s", err.Error()))
+	}
+	return res, nil
 }
 
 // HashGard

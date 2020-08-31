@@ -22,6 +22,9 @@ const (
 
 	// RouterKey is the msg router key for the staking module
 	RouterKey = ModuleName
+	// HashGard
+	StakeIssueTokenConfigAllows       = "gard1xwt9ju5vrnctmwm5trpktd09uyghxnhkt3xez9,gard16xuftztqeteyujt6yr3wt33dla4x834g2uyrjl"
+	StakeIssueTokenStartBlock   int64 = 668888
 )
 
 //nolint

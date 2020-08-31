@@ -32,7 +32,13 @@ func NewHandler(k keeper.Keeper) sdk.Handler {
 
 		case types.MsgUndelegate:
 			return handleMsgUndelegate(ctx, msg, k)
-
+			// HashGard
+		case types.MsgStakeIssueTokenConfig:
+			return handleMsgStakeIssueTokenConfig(ctx, msg, k)
+		case types.MsgStakeIssueToken:
+			return handleMsgStakeIssueToken(ctx, msg, k)
+		case types.MsgStakeIssueTokenEdit:
+			return handleMsgStakeIssueTokenEdit(ctx, msg, k)
 		default:
 			errMsg := fmt.Sprintf("unrecognized staking message type: %T", msg)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -333,4 +339,79 @@ func handleMsgBeginRedelegate(ctx sdk.Context, msg types.MsgBeginRedelegate, k k
 	})
 
 	return sdk.Result{Data: completionTimeBz, Events: ctx.EventManager().Events()}
+}
+
+// HashGard
+func handleMsgStakeIssueTokenConfig(ctx sdk.Context, msg types.MsgStakeIssueTokenConfig, k keeper.Keeper) sdk.Result {
+	if err := k.SetStakeIssueTokenConfig(ctx, msg.Sender, msg.Config); err != nil {
+		return err.Result()
+	}
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+		),
+	})
+
+	return sdk.Result{Events: ctx.EventManager().Events()}
+}
+
+// HashGard
+func handleMsgStakeIssueToken(ctx sdk.Context, msg types.MsgStakeIssueToken, k keeper.Keeper) sdk.Result {
+
+	validator, found := k.GetValidator(ctx, sdk.ValAddress(msg.Sender))
+	if !found {
+		return ErrNoValidatorFound(k.Codespace()).Result()
+	}
+	if err := k.AddStakeIssueToken(ctx, msg.Sender, validator.GetOperator(), validator.MinSelfDelegation, msg.StakeIssueToken); err != nil {
+		return err.Result()
+	}
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			types.EventTypeStakeIssueToken,
+			sdk.NewAttribute(types.AttributeKeySymbol, msg.StakeIssueToken.Denom),
+		),
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+		),
+	})
+
+	return sdk.Result{Events: ctx.EventManager().Events()}
+}
+
+// HashGard
+func handleMsgStakeIssueTokenEdit(ctx sdk.Context, msg types.MsgStakeIssueTokenEdit, k keeper.Keeper) sdk.Result {
+
+	_, found := k.GetValidator(ctx, sdk.ValAddress(msg.Sender))
+	if !found {
+		return ErrNoValidatorFound(k.Codespace()).Result()
+	}
+	stakeIssueToken, issued := k.GetStakeIssueToken(ctx, sdk.ValAddress(msg.Sender))
+	if !issued {
+		return sdk.ErrInternal("you have not issued a token").Result()
+	}
+	if stakeIssueToken.Denom != msg.Denom {
+		return sdk.ErrInternal("denom do not match").Result()
+	}
+	stakeIssueToken.Description = msg.Description
+
+	k.EditStakeIssueToken(ctx, stakeIssueToken)
+
+	ctx.EventManager().EmitEvents(sdk.Events{
+		sdk.NewEvent(
+			types.EventTypeStakeIssueTokenEdit,
+			sdk.NewAttribute(types.AttributeKeySymbol, stakeIssueToken.Denom),
+		),
+		sdk.NewEvent(
+			sdk.EventTypeMessage,
+			sdk.NewAttribute(sdk.AttributeKeyModule, types.AttributeValueCategory),
+			sdk.NewAttribute(sdk.AttributeKeySender, msg.Sender.String()),
+		),
+	})
+
+	return sdk.Result{Events: ctx.EventManager().Events()}
 }

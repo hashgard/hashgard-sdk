@@ -10,6 +10,8 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgWithdrawValidatorCommission{}, "cosmos-sdk/MsgWithdrawValidatorCommission", nil)
 	cdc.RegisterConcrete(MsgSetWithdrawAddress{}, "cosmos-sdk/MsgModifyWithdrawAddress", nil)
 	cdc.RegisterConcrete(CommunityPoolSpendProposal{}, "cosmos-sdk/CommunityPoolSpendProposal", nil)
+	//HashGard
+	cdc.RegisterConcrete(StakeIssueLockedSpendProposal{}, "cosmos-sdk/StakeIssueLockedSpendProposal", nil)
 }
 
 // generic sealed codec to be used throughout module

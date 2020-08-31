@@ -11,6 +11,10 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgDelegate{}, "cosmos-sdk/MsgDelegate", nil)
 	cdc.RegisterConcrete(MsgUndelegate{}, "cosmos-sdk/MsgUndelegate", nil)
 	cdc.RegisterConcrete(MsgBeginRedelegate{}, "cosmos-sdk/MsgBeginRedelegate", nil)
+	// HashGard
+	cdc.RegisterConcrete(MsgStakeIssueTokenConfig{}, "cosmos-sdk/MsgStakeIssueTokenConfig", nil)
+	cdc.RegisterConcrete(MsgStakeIssueToken{}, "cosmos-sdk/MsgStakeIssueToken", nil)
+	cdc.RegisterConcrete(MsgStakeIssueTokenEdit{}, "cosmos-sdk/MsgStakeIssueTokenEdit", nil)
 }
 
 // generic sealed codec to be used throughout this module

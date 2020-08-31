@@ -8,6 +8,8 @@ import (
 const (
 	// HashGard
 	QueryBlocks                        = "blocks"
+	QueryStakeIssueTokens              = "stakeIssueTokens"
+	QueryStakeIssueTokenConfig         = "stakeIssueTokenConfig"
 	QueryBondedRatio                   = "bondedRatio"
 	QueryValidators                    = "validators"
 	QueryValidator                     = "validator"

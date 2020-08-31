@@ -38,6 +38,10 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdDelegate(cdc),
 		GetCmdRedelegate(storeKey, cdc),
 		GetCmdUnbond(storeKey, cdc),
+		// HashGard
+		GetCmdStakeIssueTokenConfig(cdc),
+		GetCmdStakeIssueToken(cdc),
+		GetCmdStakeIssueTokenEdit(cdc),
 	)...)
 
 	return stakingTxCmd
@@ -128,6 +132,7 @@ func GetCmdEditValidator(cdc *codec.Codec) *cobra.Command {
 
 	cmd.Flags().AddFlagSet(fsDescriptionEdit)
 	cmd.Flags().AddFlagSet(fsCommissionUpdate)
+	cmd.Flags().AddFlagSet(FsMinSelfDelegation)
 
 	return cmd
 }
@@ -217,6 +222,9 @@ func GetCmdUnbond(storeName string, cdc *codec.Codec) *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`Unbond an amount of bonded shares from a validator.
+
+If you have issued a token, please confirm that you want to do so. The delegated token and locked token will be locked to the locked address of the token, 
+and you can submit a proposal to send it to a address later
 
 Example:
 $ %s tx staking unbond gardvaloper1jynf8n98d8af5e9arg3py3juserqy5glgzgtf4 100gard --from mykey

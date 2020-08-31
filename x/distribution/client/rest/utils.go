@@ -18,3 +18,19 @@ type (
 		Deposit     sdk.Coins      `json:"deposit" yaml:"deposit"`
 	}
 )
+
+// HashGard
+type (
+	// StakeIssueLockedSpendProposalReq defines a community pool spend proposal request body.
+	StakeIssueLockedSpendProposalReq struct {
+		BaseReq rest.BaseReq `json:"base_req" yaml:"base_req"`
+
+		Title       string         `json:"title" yaml:"title"`
+		Description string         `json:"description" yaml:"description"`
+		Denom       string         `json:"denom" yaml:"denom"`
+		Recipient   sdk.AccAddress `json:"recipient" yaml:"recipient"`
+		Amount      sdk.Coins      `json:"amount" yaml:"amount"`
+		Proposer    sdk.AccAddress `json:"proposer" yaml:"proposer"`
+		Deposit     sdk.Coins      `json:"deposit" yaml:"deposit"`
+	}
+)

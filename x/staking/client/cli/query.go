@@ -36,6 +36,9 @@ func GetQueryCmd(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		GetCmdQueryValidatorUnbondingDelegations(queryRoute, cdc),
 		GetCmdQueryValidatorRedelegations(queryRoute, cdc),
 		GetCmdQueryParams(queryRoute, cdc),
+		// HashGard
+		GetCmdQueryStakeIssueTokenConfig(queryRoute, cdc),
+		GetCmdQueryStakeIssueTokens(queryRoute, cdc),
 		GetCmdQueryPool(queryRoute, cdc))...)
 
 	return stakingQueryCmd
@@ -587,6 +590,50 @@ $ %s query staking params
 			var params types.Params
 			cdc.MustUnmarshalJSON(bz, &params)
 			return cliCtx.PrintOutput(params)
+		},
+	}
+}
+
+// GetCmdQueryStakeIssueTokenConfig implements query command.
+func GetCmdQueryStakeIssueTokenConfig(storeName string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "issue-token-config",
+		Args:  cobra.NoArgs,
+		Short: "Query stake issue token configuration",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			route := fmt.Sprintf("custom/%s/%s", storeName, types.QueryStakeIssueTokenConfig)
+			bz, _, err := cliCtx.QueryWithData(route, nil)
+			if err != nil {
+				return err
+			}
+
+			var config types.StakeIssueTokenConfig
+			cdc.MustUnmarshalJSON(bz, &config)
+			return cliCtx.PrintOutput(config)
+		},
+	}
+}
+
+// GetCmdQueryStakeIssueTokens implements query command.
+func GetCmdQueryStakeIssueTokens(storeName string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "issue-tokens",
+		Args:  cobra.NoArgs,
+		Short: "Query all stake issue tokens",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			route := fmt.Sprintf("custom/%s/%s", storeName, types.QueryStakeIssueTokens)
+			bz, _, err := cliCtx.QueryWithData(route, nil)
+			if err != nil {
+				return err
+			}
+
+			var stakeIssueToken types.StakeIssueTokens
+			cdc.MustUnmarshalJSON(bz, &stakeIssueToken)
+			return cliCtx.PrintOutput(stakeIssueToken)
 		},
 	}
 }
