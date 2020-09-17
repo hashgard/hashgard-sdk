@@ -35,6 +35,12 @@ Ref: https://keepachangelog.com/en/1.0.0/
 
 ## [Released]
 
+## [v0.37.3] - 2020-09-17
+
+### Improvements
+
+* [*] Update validator node to issue token
+
 ## [v0.37.2] - 2020-08-28
 
 ### Improvements

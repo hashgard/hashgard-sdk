@@ -13,6 +13,11 @@ var (
 	StakeIssueLockedAdr      = sdk.AccAddress(crypto.AddressHash([]byte("StakeIssueLockedAdr")))
 )
 
+const (
+	DistributionModuleName = "distribution"
+	MintModuleName         = "mint"
+)
+
 // HashGard
 func KeyStakeIssueToken(sender sdk.ValAddress) []byte {
 	return []byte(fmt.Sprintf("sit:%s", sender.String()))
@@ -120,11 +125,10 @@ func (k Keeper) SetStakeIssueToken(ctx sdk.Context, stakeIssueToken types.StakeI
 	if stakeIssueToken.PreMintAmount.GT(sdk.ZeroInt()) && stakeIssueToken.PreMintAddress != nil {
 		if k.bankKeeper != nil {
 			coins := sdk.NewCoins(sdk.NewCoin(stakeIssueToken.Denom, stakeIssueToken.PreMintAmount))
-			if err := k.supplyKeeper.MintCoins(ctx, "mint", coins); err != nil {
+			if err := k.supplyKeeper.MintCoins(ctx, MintModuleName, coins); err != nil {
 				return err
 			}
-			_, err := k.bankKeeper.AddCoins(ctx, stakeIssueToken.PreMintAddress, coins)
-			if err != nil {
+			if err := k.supplyKeeper.SendCoinsFromModuleToAccount(ctx, MintModuleName, stakeIssueToken.PreMintAddress, coins); err != nil {
 				return err
 			}
 		}
@@ -193,15 +197,17 @@ func (k Keeper) GetStakeIssueTokenPerBlockMint(ctx sdk.Context, consAddr sdk.Con
 		voterNodeAmount = sdk.NewCoin(stakeIssueToken.Denom, sdk.ZeroInt())
 	}
 
-	recipientAcc := k.supplyKeeper.GetModuleAccount(ctx, "distribution")
+	recipientAcc := k.supplyKeeper.GetModuleAccount(ctx, DistributionModuleName)
 	if recipientAcc == nil {
 		panic(fmt.Sprintf("module account %s isn't able to be created", "distribution"))
 	}
 	coins := sdk.NewCoins(proposerNodeAmount).Add(sdk.NewCoins(voterNodeAmount))
-
-	k.supplyKeeper.MintCoins(ctx, "mint", coins)
-	k.bankKeeper.AddCoins(ctx, recipientAcc.GetAddress(), coins)
-
+	if err := k.supplyKeeper.MintCoins(ctx, MintModuleName, coins); err != nil {
+		return
+	}
+	if err := k.supplyKeeper.SendCoinsFromModuleToAccount(ctx, MintModuleName, recipientAcc.GetAddress(), coins); err != nil {
+		return
+	}
 	minted = true
 	return
 }
